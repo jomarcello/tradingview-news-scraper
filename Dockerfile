@@ -6,17 +6,21 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
     && mkdir -p /etc/apt/sources.list.d \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list' \
     && apt-get update \
     && apt-get install -y \
     google-chrome-stable \
+    # Font packages
     fonts-ipafont-gothic \
     fonts-wqy-zenhei \
     fonts-thai-tlwg \
     fonts-kacst \
     fonts-freefont-ttf \
+    fonts-unifont \
+    fonts-liberation \
+    fonts-dejavu \
+    # System dependencies
     libxss1 \
-    # Additional dependencies for Playwright
     libnss3 \
     libnspr4 \
     libatk1.0-0 \
@@ -37,6 +41,7 @@ RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
     libcairo2 \
     libasound2 \
+    xvfb \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up working directory
@@ -46,11 +51,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install playwright and browser
-RUN playwright install chromium --with-deps
+# Install only Chromium browser
+RUN playwright install chromium
 
 # Copy the application code
 COPY . .
+
+# Set display for Playwright
+ENV DISPLAY=:99
 
 # Run the FastAPI application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
